@@ -21,5 +21,5 @@ template "/etc/hostname" do
   group "root"
   mode "0644"
   action :create
-  notifies :run, resources(:execute => :restart_hostname)
+  notifies :run, resources(:execute => :restart_hostname), :immediately
 end

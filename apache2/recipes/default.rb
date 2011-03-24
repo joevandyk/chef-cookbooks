@@ -28,6 +28,13 @@ service "apache2" do
   reload_command "/usr/sbin/invoke-rc.d apache2 reload && sleep 1"
   supports [:restart, :reload, :status]
   action :enable
+end
+
+# Restart apache if the service is installed and rubygems is updated.
+service "apache2" do
+  only_if do
+    File.exist?("/etc/init.d/apache2")
+  end
   subscribes :restart, resources(:execute => "update_rubygems"), :immediately
 end
 
