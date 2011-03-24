@@ -12,7 +12,7 @@ template "/etc/hosts" do
   owner "root"
   group "root"
   mode 0644
-  notifies :run, :execute => :restart_hostname
+  notifies :run, resources(:execute => :restart_hostname)
 end
 
 template "/etc/hostname" do
@@ -21,5 +21,5 @@ template "/etc/hostname" do
   group "root"
   mode "0644"
   action :create
-  notifies :run, :execute => :restart_hostname
+  notifies :run, resources(:execute => :restart_hostname)
 end
