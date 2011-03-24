@@ -1,3 +1,7 @@
+
+node[:short_hostname] = node[:node_hostname].split('.').first
+
+
 template "/etc/hosts" do
   source "hosts.erb"
   owner "root"
