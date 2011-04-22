@@ -25,7 +25,7 @@ deb-src http://apt.opscode.com/ lucid main
 end
 
 package "chef" do
-  version "0.9.14+dfsg-1"
+  #version "0.9.14+dfsg-1"
   action :install
   notifies(:run, resources(:execute => "halt"), :immediately)
 end
