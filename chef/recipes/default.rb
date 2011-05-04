@@ -30,3 +30,6 @@ package "chef" do
   notifies(:run, resources(:execute => "halt"), :immediately)
 end
 
+service "chef-client" do
+  action [:stop, :disable]
+end
