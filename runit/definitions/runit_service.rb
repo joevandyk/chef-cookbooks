@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-define :runit_service, :directory => nil, :only_if => false, :finish_script => false, :control => [], :run_restart => true, :active_directory => nil, :owner => "root", :group => "root", :template_name => nil, :start_command => "start", :stop_command => "stop", :restart_command => "restart", :status_command => "status", :options => Hash.new, :env => Hash.new do
+define :joe_service do
   include_recipe "runit"
 
   params[:directory] ||= node[:runit][:sv_dir]
@@ -26,7 +26,7 @@ define :runit_service, :directory => nil, :only_if => false, :finish_script => f
 
   sv_dir_name = "#{params[:directory]}/#{params[:name]}"
   service_dir_name = "#{params[:active_directory]}/#{params[:name]}"
-  params[:options].merge!(:env_dir => "#{sv_dir_name}/env") unless params[:env].empty?
+  #params[:options].merge!(:env_dir => "#{sv_dir_name}/env") unless params[:env].empty?
 
   directory sv_dir_name do
     owner params[:owner]
@@ -46,14 +46,14 @@ define :runit_service, :directory => nil, :only_if => false, :finish_script => f
     action :create
   end
 
-  if params[:environment]
+  if params[:env]
     directory "#{sv_dir_name}/env" do
       owner params[:owner]
       group params[:group]
       mode 0755
       action :create
     end
-    params[:environment].each do |name, value|
+    params[:env].each do |name, value|
       file "#{sv_dir_name}/env/#{name}" do
         content value
         owner params[:owner]
@@ -63,7 +63,7 @@ define :runit_service, :directory => nil, :only_if => false, :finish_script => f
   end
 
 
-  directory "#{sv_dir_name}/log/main" do
+  directory "/var/log/#{params[:name]}" do
     owner params[:owner]
     group params[:group]
     mode 0755
@@ -74,37 +74,22 @@ define :runit_service, :directory => nil, :only_if => false, :finish_script => f
     owner params[:owner]
     group params[:group]
     mode 0755
-    source "sv-#{params[:template_name]}-run.erb"
-    cookbook params[:cookbook] if params[:cookbook]
-    if params[:options].respond_to?(:has_key?)
-      variables :options => params[:options]
-    end
+    source "run.erb"
+    variables :command => params[:command]
+    cookbook "runit"
   end
 
   template "#{sv_dir_name}/log/run" do
+    cookbook "runit"
     owner params[:owner]
     group params[:group]
     mode 0755
-    source "sv-#{params[:template_name]}-log-run.erb"
-    cookbook params[:cookbook] if params[:cookbook]
-    if params[:options].respond_to?(:has_key?)
-      variables :options => params[:options]
-    end
+    source "log.erb"
+    variables :name => params[:name]
   end
 
-  unless params[:env].empty?
-    directory "#{sv_dir_name}/env" do
-      mode 0755
-      action :create
-    end
 
-    params[:env].each do |var, value|
-      file "#{sv_dir_name}/env/#{var}" do
-        content value
-      end
-    end
-  end
-
+=begin
   if params[:finish_script]
     template "#{sv_dir_name}/finish" do
       owner params[:owner]
@@ -139,6 +124,7 @@ define :runit_service, :directory => nil, :only_if => false, :finish_script => f
       end
     end
   end
+=end
 
   if params[:active_directory] == node[:runit][:service_dir]
     link "/etc/init.d/#{params[:name]}" do
@@ -146,10 +132,8 @@ define :runit_service, :directory => nil, :only_if => false, :finish_script => f
     end
   end
 
-  unless node[:platform] == "gentoo"
-    link service_dir_name do
-      to sv_dir_name
-    end
+  link service_dir_name do
+    to sv_dir_name
   end
 
   ruby_block "supervise_#{params[:name]}_sleep" do
@@ -176,5 +160,5 @@ define :runit_service, :directory => nil, :only_if => false, :finish_script => f
     end
     action :nothing
   end
-
 end
+
