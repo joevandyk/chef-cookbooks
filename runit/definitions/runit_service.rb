@@ -1,101 +1,78 @@
-#
-# Cookbook Name:: runit
-# Definition:: runit_service
-#
-# Copyright 2008-2009, Opscode, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
 define :joe_service do
   include_recipe "runit"
 
-  params[:directory] ||= node[:runit][:sv_dir]
-  params[:active_directory] ||= node[:runit][:service_dir]
-  params[:template_name] ||= params[:name]
-  params[:status_command] ||= "status"
-  params[:signal_on_update] ||= "hup"
+  name      = params[:name]
+  signal_on_update  ||= "hup"
+  owner             = params[:owner]
+  service_dir_name  = "/etc/sv/#{ name }"
+  active_dir_name   = "/etc/service/#{name}"
 
-  raise "must specify owner!" if ! params[:owner]
+  raise "must specify owner!" if ! owner
 
-  sv_dir_name = "#{params[:directory]}/#{params[:name]}"
-  service_dir_name = "#{params[:active_directory]}/#{params[:name]}"
-  #params[:options].merge!(:env_dir => "#{sv_dir_name}/env") unless params[:env].empty?
-
-  directory sv_dir_name do
+  directory service_dir_name do
     owner params[:owner]
     group params[:group]
     mode 0755
     action :create
   end
 
-  execute "chown #{ sv_dir_name }" do
-    command "chown -R #{ params[:owner]}:#{params[:group]} #{ sv_dir_name }"
+  execute "chown #{ service_dir_name }" do
+    command "chown -R #{ owner} #{ service_dir_name }"
   end
 
-  directory "#{sv_dir_name}/log" do
+  directory "#{service_dir_name}/log" do
     owner params[:owner]
     group params[:group]
     mode 0755
     action :create
   end
 
-  directory "#{sv_dir_name}/env" do
+  directory "#{service_dir_name}/env" do
     owner params[:owner]
     group params[:group]
     mode 0755
     action :create
   end
   if params[:env]
-    params[:env].each do |name, value|
-      file "#{sv_dir_name}/env/#{name}" do
+    params[:env].each do |env, value|
+      file "#{service_dir_name}/env/#{env}" do
         content value
         owner params[:owner]
         group params[:group]
-        notifies(:run, "execute[reload_runit_service_#{params[:name]}]")
+        notifies(:run, "execute[reload_runit_service_#{name}]")
       end
     end
   end
 
 
-  directory "/var/log/#{params[:name]}" do
+  directory "/var/log/#{name}" do
     owner params[:owner]
     group params[:group]
     mode 0755
     action :create
   end
 
-  execute "reload_runit_service_#{params[:name]}" do
-    command "sv #{params[:signal_on_update]} #{params[:name]}"
+  execute "reload_runit_service_#{name}" do
+    command "sv #{signal_on_update} #{name}"
     action :nothing
   end
 
-  execute "restart_runit_log_#{ params[:name]}" do
-    command "sv #{params[:signal_on_update]} #{params[:name]}/log"
+  execute "restart_runit_log_#{ name}" do
+    command "sv #{signal_on_update} #{name}/log"
     action :nothing
   end
 
-  template "/var/log/#{params[:name]}/config" do
+  template "/var/log/#{name}/config" do
     owner params[:owner]
     group params[:group]
     source "log_config.erb"
     cookbook "runit"
-    variables :service_name => params[:name]
-    notifies(:run, "execute[restart_runit_log_#{params[:name]}]")
+    variables :service_name => name
+    notifies(:run, "execute[restart_runit_log_#{name}]")
   end
 
 
-  template "#{sv_dir_name}/run" do
+  template "#{service_dir_name}/run" do
     owner params[:owner]
     group params[:group]
     mode 0755
@@ -107,10 +84,10 @@ define :joe_service do
               :daemon => params[:daemon],
               :pid   => params[:pid]
     cookbook "runit"
-    notifies(:run, "execute[reload_runit_service_#{params[:name]}]")
+    notifies(:run, "execute[reload_runit_service_#{name}]")
   end
 
-  template "#{sv_dir_name}/log/run" do
+  template "#{service_dir_name}/log/run" do
     cookbook "runit"
     owner params[:owner]
     group params[:group]
@@ -120,77 +97,20 @@ define :joe_service do
     notifies(:run, "execute[restart_runit_log_#{params[:name]}]")
   end
 
-
-=begin
-  if params[:finish_script]
-    template "#{sv_dir_name}/finish" do
-      owner params[:owner]
-      group params[:group]
-      mode 0755
-      source "sv-#{params[:template_name]}-finish.erb"
-      cookbook params[:cookbook] if params[:cookbook]
-      if params[:options].respond_to?(:has_key?)
-        variables :options => params[:options]
-      end
-    end
-  end
-
-  unless params[:control].empty?
-    directory "#{sv_dir_name}/control" do
-      owner params[:owner]
-      group params[:group]
-      mode 0755
-      action :create
-    end
-
-    params[:control].each do |signal|
-      template "#{sv_dir_name}/control/#{signal}" do
-        owner params[:owner]
-        group params[:group]
-        mode 0755
-        source "sv-#{params[:template_name]}-control-#{signal}.erb"
-        cookbook params[:cookbook] if params[:cookbook]
-        if params[:options].respond_to?(:has_key?)
-          variables :options => params[:options]
-        end
-      end
-    end
-  end
-=end
-
-  if params[:active_directory] == node[:runit][:service_dir]
-    link "/etc/init.d/#{params[:name]}" do
-      to node[:runit][:sv_bin]
-    end
-  end
-
-  link service_dir_name do
-    to sv_dir_name
+  link active_dir_name do
+    to service_dir_name
+    owner params[:owner]
+    group params[:group]
   end
 
   ruby_block "supervise_#{params[:name]}_sleep" do
     block do
-      Chef::Log.debug("Waiting until named pipe #{sv_dir_name}/supervise/ok exists.")
-      (1..10).each {|i| sleep 1 unless ::FileTest.pipe?("#{sv_dir_name}/supervise/ok") }
+      Chef::Log.debug("Waiting until named pipe #{service_dir_name}/supervise/ok exists.")
+      (1..10).each {|i| sleep 1 unless ::FileTest.pipe?("#{service_dir_name}/supervise/ok") }
     end
-    not_if { FileTest.pipe?("#{sv_dir_name}/supervise/ok") }
+    not_if { FileTest.pipe?("#{service_dir_name}/supervise/ok") }
+    notifies :run, "execute[chown #{ service_dir_name }]"
   end
 
-  service params[:name] do
-    control_cmd = node[:runit][:sv_bin]
-    if params[:owner]
-      control_cmd = "#{node[:runit][:chpst_bin]} -u #{params[:owner]} #{control_cmd}"
-    end
-    provider Chef::Provider::Service::Init
-    supports :restart => true, :status => true
-    start_command "#{control_cmd} #{params[:start_command]} #{service_dir_name}"
-    stop_command "#{control_cmd} #{params[:stop_command]} #{service_dir_name}"
-    restart_command "#{control_cmd} #{params[:restart_command]} #{service_dir_name}"
-    status_command "#{control_cmd} #{params[:status_command]} #{service_dir_name}"
-    if params[:run_restart]
-      subscribes :restart, resources(:template => "#{sv_dir_name}/run"), :delayed
-    end
-    action :nothing
-  end
 end
 
