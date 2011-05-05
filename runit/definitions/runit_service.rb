@@ -50,7 +50,6 @@ define :joe_service do
     end
   end
 
-
   # Create the actual log directory
   directory "/var/log/#{name}" do
     owner params[:owner]
@@ -61,7 +60,7 @@ define :joe_service do
 
   # Restart the service whenever we change something.
   execute "reload_runit_service_#{name}" do
-    command "sv #{signal_on_update} #{name}"
+    command "service runsvdir reload; sleep 2; sv #{signal_on_update} #{name}"
     action :nothing
   end
 
@@ -80,7 +79,6 @@ define :joe_service do
     variables :service_name => name
     notifies(:run, "execute[restart_runit_log_#{name}]")
   end
-
 
   # Create the run script.
   template "#{service_dir_name}/run" do
