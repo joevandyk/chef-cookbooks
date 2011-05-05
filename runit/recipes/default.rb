@@ -17,6 +17,28 @@
 # limitations under the License.
 #
 
+pkg_path = "#{Chef::Config[:file_cache_path]}/pidsig.dpkg"
+
+case node.automatic[:kernel][:machine]
+when "i686"
+  pidsig_url = "https://s3.amazonaws.com/tanga/pidsig_20110503-1_i386.deb"
+  pidsig_sha = "5474615bb58e43046389cb41385c42c6297313a6026e993338cc83162c0b4cea"
+when "x86_64"
+  pidsig_url = "https://s3.amazonaws.com/tanga/pidsig_20110503-1_amd64.deb"
+  pidsig_sha = "e3bba620a18a210ecbf8a8c0757856a66e4046c998953bcab359e7c64230ce1d"
+end
+
+remote_file pkg_path do
+  source pidsig_url
+  checksum pidsig_sha
+end
+
+dpkg_package "pidsig" do
+  source pkg_path
+end
+
+
+
 case node[:platform]
 when "debian","ubuntu", "gentoo"
   execute "start-runsvdir" do

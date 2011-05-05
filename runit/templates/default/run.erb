@@ -1,7 +1,12 @@
 #!/bin/sh
+
 <% if @cwd -%>
-  chdir <%= @cwd %>
+chdir <%= @cwd %>
 <% end -%>
+
 exec 2>&1
 exec chpst -u <%= @user %> -e /etc/sv/<%= @name %>/env \
+<% if @daemon -%>
+pidsig <% if @pid %> -p <%= @pid %> <% end %> \
+<% end -%>
 <%= @command %>

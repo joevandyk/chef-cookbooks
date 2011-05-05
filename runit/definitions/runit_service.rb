@@ -103,7 +103,9 @@ define :joe_service do
     variables :command => params[:command],
               :user => params[:owner],
               :name => params[:name],
-              :cwd => params[:cwd]
+              :cwd => params[:cwd],
+              :daemon => params[:daemon],
+              :pid   => params[:pid]
     cookbook "runit"
     notifies(:run, "execute[reload_runit_service_#{params[:name]}]")
   end
