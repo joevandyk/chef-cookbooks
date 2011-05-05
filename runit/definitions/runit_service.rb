@@ -23,6 +23,9 @@ define :joe_service do
   params[:directory] ||= node[:runit][:sv_dir]
   params[:active_directory] ||= node[:runit][:service_dir]
   params[:template_name] ||= params[:name]
+  params[:status_command] ||= "status"
+
+  raise "must specify owner!" if params[:owner].blank?
 
   sv_dir_name = "#{params[:directory]}/#{params[:name]}"
   service_dir_name = "#{params[:active_directory]}/#{params[:name]}"
@@ -75,7 +78,8 @@ define :joe_service do
     group params[:group]
     mode 0755
     source "run.erb"
-    variables :command => params[:command]
+    variables :command => params[:command],
+              :user => params[:owner]
     cookbook "runit"
   end
 
