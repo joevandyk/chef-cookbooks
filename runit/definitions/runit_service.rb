@@ -24,8 +24,9 @@ define :joe_service do
   params[:active_directory] ||= node[:runit][:service_dir]
   params[:template_name] ||= params[:name]
   params[:status_command] ||= "status"
+  params[:signal_on_update] ||= "hup"
 
-  raise "must specify owner!" if params[:owner].blank?
+  raise "must specify owner!" if ! params[:owner]
 
   sv_dir_name = "#{params[:directory]}/#{params[:name]}"
   service_dir_name = "#{params[:active_directory]}/#{params[:name]}"
@@ -49,18 +50,19 @@ define :joe_service do
     action :create
   end
 
+  directory "#{sv_dir_name}/env" do
+    owner params[:owner]
+    group params[:group]
+    mode 0755
+    action :create
+  end
   if params[:env]
-    directory "#{sv_dir_name}/env" do
-      owner params[:owner]
-      group params[:group]
-      mode 0755
-      action :create
-    end
     params[:env].each do |name, value|
       file "#{sv_dir_name}/env/#{name}" do
         content value
         owner params[:owner]
         group params[:group]
+        notifies(:run, "execute[reload_runit_service_#{params[:name]}]")
       end
     end
   end
@@ -73,14 +75,37 @@ define :joe_service do
     action :create
   end
 
+  execute "reload_runit_service_#{params[:name]}" do
+    command "sv #{params[:signal_on_update]} #{params[:name]}"
+    action :nothing
+  end
+
+  execute "restart_runit_log_#{ params[:name]}" do
+    command "sv #{params[:signal_on_update]} #{params[:name]}/log"
+    action :nothing
+  end
+
+  template "/var/log/#{params[:name]}/config" do
+    owner params[:owner]
+    group params[:group]
+    source "log_config.erb"
+    cookbook "runit"
+    variables :service_name => params[:name]
+    notifies(:run, "execute[restart_runit_log_#{params[:name]}]")
+  end
+
+
   template "#{sv_dir_name}/run" do
     owner params[:owner]
     group params[:group]
     mode 0755
     source "run.erb"
     variables :command => params[:command],
-              :user => params[:owner]
+              :user => params[:owner],
+              :name => params[:name],
+              :cwd => params[:cwd]
     cookbook "runit"
+    notifies(:run, "execute[reload_runit_service_#{params[:name]}]")
   end
 
   template "#{sv_dir_name}/log/run" do
@@ -90,6 +115,7 @@ define :joe_service do
     mode 0755
     source "log.erb"
     variables :name => params[:name]
+    notifies(:run, "execute[restart_runit_log_#{params[:name]}]")
   end
 
 

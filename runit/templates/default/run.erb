@@ -1,4 +1,7 @@
 #!/bin/sh
+<% if @cwd -%>
+  chdir <%= @cwd %>
+<% end -%>
 exec 2>&1
-exec chpst -u <%= @user %> -e env \
+exec chpst -u <%= @user %> -e /etc/sv/<%= @name %>/env \
 <%= @command %>
