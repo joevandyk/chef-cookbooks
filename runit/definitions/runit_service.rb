@@ -60,7 +60,7 @@ define :joe_service do
 
   # Restart the service whenever we change something.
   execute "reload_runit_service_#{name}" do
-    command "service runsvdir reload; sleep 2; sv #{signal_on_update} #{name}"
+    command "sleep 2; sv #{signal_on_update} #{name}"
     action :nothing
   end
 
