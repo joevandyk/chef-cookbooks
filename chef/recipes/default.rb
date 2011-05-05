@@ -1,4 +1,5 @@
 include_recipe "ruby_enterprise"
+package "build-essential"
 
 execute "halt" do
   action :nothing
