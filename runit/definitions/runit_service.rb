@@ -9,6 +9,7 @@ define :joe_service do
 
   raise "must specify owner!" if ! owner
 
+  # Create the runit service directory
   directory service_dir_name do
     owner params[:owner]
     group params[:group]
@@ -16,10 +17,12 @@ define :joe_service do
     action :create
   end
 
+  # Make sure the owner owns everything in the runit service directory
   execute "chown #{ service_dir_name }" do
     command "chown -R #{ owner} #{ service_dir_name }"
   end
 
+  # Create the runit log directory
   directory "#{service_dir_name}/log" do
     owner params[:owner]
     group params[:group]
@@ -27,12 +30,15 @@ define :joe_service do
     action :create
   end
 
+  # Create the environment directory
   directory "#{service_dir_name}/env" do
     owner params[:owner]
     group params[:group]
     mode 0755
     action :create
   end
+
+  # Loop over the environment variables and create their files.
   if params[:env]
     params[:env].each do |env, value|
       file "#{service_dir_name}/env/#{env}" do
@@ -45,6 +51,7 @@ define :joe_service do
   end
 
 
+  # Create the actual log directory
   directory "/var/log/#{name}" do
     owner params[:owner]
     group params[:group]
@@ -52,16 +59,19 @@ define :joe_service do
     action :create
   end
 
+  # Restart the service whenever we change something.
   execute "reload_runit_service_#{name}" do
     command "sv #{signal_on_update} #{name}"
     action :nothing
   end
 
+  # Restart the service logger whenever we change something logging related.
   execute "restart_runit_log_#{ name}" do
     command "sv #{signal_on_update} #{name}/log"
     action :nothing
   end
 
+  # Create the log configuration script.
   template "/var/log/#{name}/config" do
     owner params[:owner]
     group params[:group]
@@ -72,6 +82,7 @@ define :joe_service do
   end
 
 
+  # Create the run script.
   template "#{service_dir_name}/run" do
     owner params[:owner]
     group params[:group]
@@ -87,6 +98,7 @@ define :joe_service do
     notifies(:run, "execute[reload_runit_service_#{name}]")
   end
 
+  # Create the logging script.
   template "#{service_dir_name}/log/run" do
     cookbook "runit"
     owner params[:owner]
@@ -97,16 +109,20 @@ define :joe_service do
     notifies(:run, "execute[restart_runit_log_#{params[:name]}]")
   end
 
+  # Activate the service by linking it to /etc/service..
   link active_dir_name do
     to service_dir_name
     owner params[:owner]
     group params[:group]
   end
 
+  # Wait for runit to start.
+  # Once it does, change ownership of service directory.
+  # Dunno if it's possible to do this some other way
   ruby_block "supervise_#{params[:name]}_sleep" do
     block do
       Chef::Log.debug("Waiting until named pipe #{service_dir_name}/supervise/ok exists.")
-      (1..10).each {|i| sleep 1 unless ::FileTest.pipe?("#{service_dir_name}/supervise/ok") }
+      10.times { |i| sleep 1 unless ::FileTest.pipe?("#{service_dir_name}/supervise/ok") }
     end
     not_if { FileTest.pipe?("#{service_dir_name}/supervise/ok") }
     notifies :run, "execute[chown #{ service_dir_name }]"
