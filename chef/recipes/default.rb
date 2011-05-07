@@ -1,4 +1,4 @@
-include_recipe "chef-rvm"
+include_recipe "rvm"
 package "build-essential"
 
 execute "halt" do

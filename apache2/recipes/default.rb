@@ -30,12 +30,10 @@ service "apache2" do
   action :enable
 end
 
-# Restart apache if the service is installed and rubygems is updated.
 service "apache2" do
   only_if do
     File.exist?("/etc/init.d/apache2")
   end
-  subscribes :restart, resources(:execute => "update_rubygems"), :immediately
 end
 
 directory "#{node[:apache][:dir]}/ssl" do
