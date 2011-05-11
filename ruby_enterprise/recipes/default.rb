@@ -1,4 +1,4 @@
-pkg_path = "#{Chef::Config[:file_cache_path]}/ruby-enterprise.dpkg"
+pkg_path = "/var/cache/apt/ruby-enterprise.dpkg"
 
 remote_file pkg_path do
   source   node[:ruby_enterprise][:dpkg_url]

@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-pkg_path = "#{Chef::Config[:file_cache_path]}/pidsig.dpkg"
+pkg_path = "/var/cache/apt/pidsig.dpkg"
 
 case node.automatic[:kernel][:machine]
 when "i686"
