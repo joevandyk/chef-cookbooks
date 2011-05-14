@@ -1,14 +1,5 @@
+
 define :envdir do
-  package "daemontools"
-
-  directory "/etc/env" do
-    mode 0755
-  end
-
-  directory "/env" do
-    mode 0755
-  end
-
   dir = "/etc/env/#{params[:dir]}"
 
   directory dir do

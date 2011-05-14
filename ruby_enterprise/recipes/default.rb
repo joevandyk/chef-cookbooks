@@ -26,6 +26,12 @@ exec "/usr/local/bin/ruby" "$@"
   EOF
 end
 
+file "/etc/gemrc" do
+  content <<-EOF
+gem: --no-ri --no-rdoc
+  EOF
+end
+
 file "/etc/profile.d/ruby_gc.sh" do
   mode "0444"
   content ruby_gc_tweaks
