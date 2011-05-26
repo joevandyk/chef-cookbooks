@@ -40,7 +40,8 @@ define :web_app, :template => "web_app.conf.erb" do
       :application_name => application_name,
       :params => params,
       :error_log => error_log,
-      :access_log => access_log
+      :access_log => access_log,
+      :sub_uris => params[:sub_uris]
     )
     if File.exists?("#{node[:apache][:dir]}/sites-enabled/#{application_name}.conf")
       notifies :reload, resources(:service => "apache2"), :delayed
