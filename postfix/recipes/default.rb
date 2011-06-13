@@ -18,8 +18,10 @@
 # limitations under the License.
 #
 
-package "postfix" do
-  action :install
+%w{ postfix libsasl2-2  ca-certificates}.each do |pkg|
+  package pkg do
+    action :install
+  end
 end
 
 service "postfix" do
@@ -33,3 +35,32 @@ template "/etc/postfix/main.cf" do
   mode 0644
   notifies :restart, resources(:service => "postfix")
 end
+
+execute "postmap-relayhost_map" do
+  command "postmap /etc/postfix/relayhost_map"
+  action :nothing
+end
+
+execute "postmap-sasl_passwd" do
+  command "postmap /etc/postfix/sender_sasl"
+  action :nothing
+end
+
+template "/etc/postfix/relayhost_map" do
+  source "relayhost_map.erb"
+  owner "root"
+  group "root"
+  mode 0644
+  notifies :run, resources(:execute => "postmap-relayhost_map"), :immediately
+  notifies :restart, resources(:service => "postfix")
+end
+
+template "/etc/postfix/sender_sasl" do
+  source "sender_sasl.erb"
+  owner "root"
+  group "root"
+  mode 0644
+  notifies :run, resources(:execute => "postmap-sasl_passwd"), :immediately
+  notifies :restart, resources(:service => "postfix")
+end
+

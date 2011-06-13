@@ -1,3 +1,4 @@
+=begin
 include_recipe "ruby_enterprise"
 package "build-essential"
 
@@ -14,3 +15,4 @@ end
 service "chef-client" do
   action [:stop, :disable]
 end
+=end

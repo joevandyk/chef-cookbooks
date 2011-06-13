@@ -1,0 +1,3 @@
+<% node[:postfix][:relay_hosts].each do |host, options| %>
+@<%= host %> <%= options[:sasl_username]%>:<%= options[:sasl_password]%>
+<% end %>
