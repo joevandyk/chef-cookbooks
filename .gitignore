@@ -1,0 +1,7 @@
+.rake_test_cache
+*.swp
+*.swo
+*.swn
+.vagrant
+vendor/bundler
+bin
