@@ -11,7 +11,8 @@ when "i686"
   default[:ruby][:dpkg_url] = "https://s3.amazonaws.com/tanga/tanga-ruby19_1.0.1_i386.deb"
   default[:ruby][:dpkg_sha] = "3c20dc1000783cd3bd04925e5a60f3eee3c0d5a2650f4ef1a981f4b46d00d5c7"
 when "x86_64"
-  raise "not done yet"
+  default[:ruby][:dpkg_url] = "https://s3.amazonaws.com/tanga/tanga-ruby19_1.0.1_amd64.deb"
+  default[:ruby][:dpkg_sha] = "038b4ac9601350f3649bb655af04d366c8dd7bd9d6a83bb662f79a7cc0fe860a"
 else
   raise "what are you??"
 end
