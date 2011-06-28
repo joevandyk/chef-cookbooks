@@ -20,6 +20,7 @@ smtp_sasl_auth_enable = yes
 smtp_sender_dependent_authentication=yes
 sender_dependent_relayhost_maps = hash:/etc/postfix/relayhost_map 
 smtp_sasl_password_maps = hash:/etc/postfix/sender_sasl 
+smtp_sasl_security_options = noanonymous
 <% end %>
 
 default_destination_concurrency_limit = 20
