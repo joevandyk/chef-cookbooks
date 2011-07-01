@@ -27,4 +27,10 @@ node.users.each do |username, options|
     mode "0600"
     owner username
   end
+
+  file "#{home_dir}/.bashrc" do
+    content "export PATH=/opt/ruby19/bin:$PATH"
+    mode "0600"
+    owner username
+  end
 end
