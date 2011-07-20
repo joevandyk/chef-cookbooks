@@ -38,6 +38,12 @@ define :joe_service do
     action :create
   end
 
+  file "#{service_dir_name}/env/HOME" do
+    content "/home/#{params[:owner]}"
+    owner params[:owner]
+    group params[:group]
+  end
+
   # Loop over the environment variables and create their files.
   if params[:env]
     params[:env].each do |env, value|
