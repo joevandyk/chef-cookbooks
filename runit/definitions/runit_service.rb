@@ -82,6 +82,12 @@ define :joe_service do
     action :nothing
   end
 
+  # Restart the service whenever we change something.
+  execute "restart_runit_service_#{name}" do
+    command "sleep 2; sv restart #{name}"
+    action :nothing
+  end
+
   # Restart the service logger whenever we change something logging related.
   execute "restart_runit_log_#{ name}" do
     command "sv #{signal_on_update} #{name}/log"
