@@ -10,7 +10,7 @@ template "/etc/ssh/ssh_config" do
 end
 
 template "/etc/ssh/sshd_config" do
-  source "sshd_config"
+  source "sshd_config.erb"
   notifies :reload, resources(:service => 'ssh')
   mode "0644"
 end
