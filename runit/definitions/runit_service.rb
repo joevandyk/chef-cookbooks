@@ -1,8 +1,8 @@
 define :joe_service do
   include_recipe "runit"
 
-  name      = params[:name]
-  signal_on_update  ||= "hup"
+  name              = params[:name]
+  signal_on_update  = params[:signal_on_update] || "hup"
   owner             = params[:owner]
   service_dir_name  = "/etc/sv/#{ name }"
   active_dir_name   = "/etc/service/#{name}"
