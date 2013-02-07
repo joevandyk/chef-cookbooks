@@ -5,7 +5,7 @@ chdir <%= @cwd %>
 <% end -%>
 
 exec 2>&1
-exec chpst -u <%= @user %> -e /etc/sv/<%= @name %>/env \
+exec chpst -u <%= @user %> -e /etc/env/tanga_rails -e /etc/sv/<%= @name %>/env \
 <% if @daemon -%>
 pidsig <% if @pid %> -p <%= @pid %> <% end %> \
 <% end -%>
