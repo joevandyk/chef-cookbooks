@@ -63,7 +63,6 @@ define :joe_service do
         content value
         owner params[:owner]
         group params[:group]
-        notifies(:run, "execute[reload_runit_service_#{name}]")
       end
     end
   end
@@ -76,24 +75,6 @@ define :joe_service do
     action :create
   end
 
-  # Restart the service whenever we change something.
-  execute "reload_runit_service_#{name}" do
-    command "sleep 2; sv #{signal_on_update} #{name}"
-    action :nothing
-  end
-
-  # Restart the service whenever we change something.
-  execute "restart_runit_service_#{name}" do
-    command "sleep 2; sv restart #{name}"
-    action :nothing
-  end
-
-  # Restart the service logger whenever we change something logging related.
-  execute "restart_runit_log_#{ name}" do
-    command "sv #{signal_on_update} #{name}/log"
-    action :nothing
-  end
-
   # Create the log configuration script.
   template "/var/log/#{name}/config" do
     owner params[:owner]
@@ -101,7 +82,6 @@ define :joe_service do
     source "log_config.erb"
     cookbook "runit"
     variables :service_name => name
-    notifies(:run, "execute[restart_runit_log_#{name}]")
   end
 
   # Create the run script.
@@ -117,7 +97,6 @@ define :joe_service do
               :daemon => params[:daemon],
               :pid   => params[:pid]
     cookbook "runit"
-    notifies(:run, "execute[reload_runit_service_#{name}]")
   end
 
   # Create the logging script.
@@ -128,6 +107,5 @@ define :joe_service do
     mode 0755
     source "log.erb"
     variables :name => params[:name]
-    notifies(:run, "execute[restart_runit_log_#{params[:name]}]")
   end
 end
