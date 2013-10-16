@@ -7,6 +7,10 @@ define :joe_service do
   service_dir_name  = "/etc/sv/#{ name }"
   active_dir_name   = "/etc/service/#{name}"
 
+  directory "/etc/service" do
+    mode 0777
+  end
+
   raise "must specify owner!" if ! owner
 
   # Create the runit service directory
