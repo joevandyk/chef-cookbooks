@@ -130,25 +130,4 @@ define :joe_service do
     variables :name => params[:name]
     notifies(:run, "execute[restart_runit_log_#{params[:name]}]")
   end
-
-  # Activate the service by linking it to /etc/service..
-  link active_dir_name do
-    to service_dir_name
-    owner params[:owner]
-    group params[:group]
-  end
-
-  # Wait for runit to start.
-  # Once it does, change ownership of service directory.
-  # Dunno if it's possible to do this some other way
-  ruby_block "supervise_#{params[:name]}_sleep" do
-    block do
-      Chef::Log.debug("Waiting until named pipe #{service_dir_name}/supervise/ok exists.")
-      10.times { |i| sleep 1 unless ::FileTest.pipe?("#{service_dir_name}/supervise/ok") }
-    end
-    not_if { FileTest.pipe?("#{service_dir_name}/supervise/ok") }
-    notifies :run, "execute[chown #{ service_dir_name }]"
-  end
-
 end
-
